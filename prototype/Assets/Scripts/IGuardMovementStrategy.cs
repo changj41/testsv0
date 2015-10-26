@@ -4,6 +4,6 @@ using System.Collections;
 public interface IGuardMovementStrategy
 {
 
-  void Path();
+  Vector2 NextPoint();
 
 }

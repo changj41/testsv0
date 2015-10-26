@@ -9,6 +9,7 @@ public class Guard : MonoBehaviour
   private IGuardMovementStrategy _guardMovementStrategy;
   private IGuardDetectStrategy _guardDetectStrategy;
   private Rigidbody2D _rigidbody;
+  private Vector2 nextPoint;
 
   private bool clockwise = false;
   private bool counterclockwise = false;
@@ -24,17 +25,27 @@ public class Guard : MonoBehaviour
 
   void Start()
   {
-    Vector2 a = Vector2.up;
-    Vector2 b = Vector2.right;
-    Debug.Log("Angle: " + Vector2.Angle(b, a));
-
-
     _rigidbody = GetComponent<Rigidbody2D>();
+    //nextPoint = _rigidbody.position;
+    nextPoint = new Vector2(5.0f, 5.0f);
   }
 
   void Update()
   {
-    MoveTo(new Vector2 (5.0f, 5.0f));
+    /*
+    if(VectorCloseTo(_rigidbody.position, new Vector2(5.0f, 5.0f))) {
+      MoveTo(new Vector2(-5.0f, 5.0f));
+    } else {
+      MoveTo(new Vector2(5.0f, 5.0f));
+    }
+    */
+    if(VectorCloseTo(_rigidbody.position, nextPoint))
+    {
+      _rigidbody.velocity = Vector2.zero;
+      nextPoint = new Vector2(-5.0f, -5.0f);
+    }
+    MoveTo(nextPoint);
+
   }
 
   //Rotates the object by 1 degree CounterClockwise (1 degree)
@@ -54,23 +65,54 @@ public class Guard : MonoBehaviour
     //Acquires the current position for calculations
     Vector2 initialPosition = _rigidbody.position;
     Vector2 targetDirection = (targetLocation - initialPosition).normalized;
+    //float targetAngle = Mathf.Atan(targetLocation.x / targetLocation.y) * 360 / (2 * Mathf.PI);
+    float targetAngle = Mathf.Atan(targetDirection.y / targetDirection.x) * 360 / (2 * Mathf.PI);
+    if(targetDirection.x < 0)
+    {
+      targetAngle += 180.0f;
+    }
+    //Debug
+    //.Log("Target Angle: " + (int)targetAngle);
+    //Debug.Log("Target Point: " + targetDirection.x + ", " + targetDirection.y);
 
     //Initial angle of guard
+    //Euler Angle of Z has 0 facing down
     float initialAngle = _rigidbody.transform.eulerAngles.z - 90.0f;
-    Vector2 initialDirection = new Vector2 (Mathf.Cos(initialAngle), Mathf.Sin(initialAngle));
-    float angleChange = Vector2.Angle(initialDirection, targetDirection);
-    if (angleChange == 0) {
+    float initialAngleRadians = initialAngle * (2 * Mathf.PI) / 360;
+    //float initialEulerAngle = _rigidbody.transform.eulerAngles.z - 90.0f;
+    Vector2 initialDirection = new Vector2 (Mathf.Cos(initialAngleRadians), Mathf.Sin(initialAngleRadians));
+    //Debug
+    //Debug.Log("Initial Angle: " + (int)initialAngle);
 
-    }
+    float angleChange = Vector2.Angle(initialDirection, targetDirection);
+    //Debug
+    //Debug.Log("Angle Change: " + angleChange);
 
     //If the current position is already at the final position, return and set velocity to 0
-    if (VectorCloseTo(initialPosition, targetLocation)) {
+    if(VectorCloseTo(initialPosition, targetLocation)) 
+    {
       _rigidbody.velocity = Vector2.zero;
       return true;
     }
 
-    //Set the velocity
-    _rigidbody.velocity = targetDirection * speed;
+    //Already looking towards final destination, so set velocity
+    if(angleChange < 0.5)
+    {
+      _rigidbody.velocity = targetDirection * speed;
+      return false;
+    } else
+    {
+      if(initialAngle - targetAngle <= 0)
+      {
+        //Debug.Log("CCW");
+        RotateCCWOne();
+      } else
+      {
+        //Debug.Log("CW");
+        RotateCWOne();
+      }
+      return false;
+    }
     return false;
   }
 

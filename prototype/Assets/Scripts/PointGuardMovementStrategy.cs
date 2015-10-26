@@ -1,10 +1,11 @@
 using System;
+using UnityEngine;
 
 class PointGuardMovementStrategy : IGuardMovementStrategy
 {
-  public Path()
+  public Vector2 NextPoint()
   {
-
+    return Vector2.zero;
   }
 
 }
